@@ -78,33 +78,37 @@ export default function App() {
     }
   }, []);
 
-  // Save history to localStorage whenever it changes with safety check
+  // Save history to localStorage with debouncing and recursion protection
   useEffect(() => {
-    const saveToStorage = (data: AnalysisHistory[]) => {
+    if (history.length === 0) return;
+    
+    const timeoutId = setTimeout(() => {
       try {
-        localStorage.setItem('stock_analysis_history', JSON.stringify(data));
+        const serialized = JSON.stringify(history);
+        localStorage.setItem('stock_analysis_history', serialized);
       } catch (e) {
         if (e instanceof Error && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-          console.warn("Storage quota exceeded, removing oldest record images...");
-          // Try to fix it by removing images from the oldest half of history
-          const cleanedHistory = data.map((record, index) => {
-            if (index > data.length / 2) {
-              return { ...record, images: [] };
-            }
-            return record;
+          console.error("Storage quota exceeded. Pruning history to save state.");
+          // Update state to remove images from older records (to actually solve the problem)
+          setHistory(prev => {
+            const midway = Math.floor(prev.length / 2);
+            return prev.map((record, index) => 
+              index >= midway ? { ...record, images: [] } : record
+            );
           });
-          // Recursive call with less data
-          if (cleanedHistory.length > 0) {
-            saveToStorage(cleanedHistory);
-          }
         }
       }
-    };
+    }, 1000); // 1 second debounce
     
-    if (history.length > 0) {
-      saveToStorage(history);
-    }
+    return () => clearTimeout(timeoutId);
   }, [history]);
+
+  const clearAllHistory = () => {
+    if (window.confirm("確定要刪除所有歷史分析紀錄嗎？此動作無法復原。")) {
+      setHistory([]);
+      localStorage.removeItem('stock_analysis_history');
+    }
+  };
 
   const downloadImage = (url: string, filename: string) => {
     const link = document.createElement('a');
@@ -228,6 +232,8 @@ export default function App() {
       alert("分析失敗，請稍後再試。");
     } finally {
       setIsAnalyzing(false);
+      // Ensure state resets even on unexpected failures
+      setTimeout(() => setIsAnalyzing(false), 30000); // 30s backup reset
     }
   };
 
@@ -381,6 +387,15 @@ export default function App() {
               <History size={14} /> 歷史紀錄
             </button>
           </div>
+
+          {activeTab === 'HISTORY' && history.length > 0 && (
+            <button 
+              onClick={clearAllHistory}
+              className="px-4 py-1.5 text-[10px] font-bold text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all"
+            >
+              清除所有紀錄
+            </button>
+          )}
           
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
