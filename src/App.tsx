@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, X, AlertTriangle, Search, Filter, TrendingUp, TrendingDown, Info, ChevronRight, Upload, Image as ImageIcon, Trash2, Cpu, Loader2, Sparkles, History, LayoutDashboard, Clock, Calendar } from 'lucide-react';
+import { Check, X, AlertTriangle, Search, Filter, TrendingUp, TrendingDown, Info, ChevronRight, Upload, Image as ImageIcon, Trash2, Cpu, Loader2, Sparkles, History, LayoutDashboard, Clock, Calendar, Download } from 'lucide-react';
 import { STOCKS_DATA, Rating, StockOpinion } from './data';
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -78,10 +78,42 @@ export default function App() {
     }
   }, []);
 
-  // Save history to localStorage whenever it changes
+  // Save history to localStorage whenever it changes with safety check
   useEffect(() => {
-    localStorage.setItem('stock_analysis_history', JSON.stringify(history));
+    const saveToStorage = (data: AnalysisHistory[]) => {
+      try {
+        localStorage.setItem('stock_analysis_history', JSON.stringify(data));
+      } catch (e) {
+        if (e instanceof Error && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+          console.warn("Storage quota exceeded, removing oldest record images...");
+          // Try to fix it by removing images from the oldest half of history
+          const cleanedHistory = data.map((record, index) => {
+            if (index > data.length / 2) {
+              return { ...record, images: [] };
+            }
+            return record;
+          });
+          // Recursive call with less data
+          if (cleanedHistory.length > 0) {
+            saveToStorage(cleanedHistory);
+          }
+        }
+      }
+    };
+    
+    if (history.length > 0) {
+      saveToStorage(history);
+    }
   }, [history]);
+
+  const downloadImage = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -286,12 +318,22 @@ export default function App() {
                     {uploadedImages.map((img) => (
                       <div key={img.id} className="relative shrink-0 group/img">
                         <img src={img.url} className="h-8 w-8 sm:h-10 sm:w-10 object-cover rounded-lg ring-2 ring-white shadow-sm" alt="Preview" />
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
-                          className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover/img:opacity-100 transition-opacity"
-                        >
-                          <X size={10} />
-                        </button>
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); downloadImage(img.url, `stock-report-${img.id}.jpg`); }}
+                            className="bg-white/20 hover:bg-white/40 p-1 rounded-md text-white transition-colors"
+                            title="下載圖片"
+                          >
+                            <Download size={10} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
+                            className="bg-rose-500/80 hover:bg-rose-600 p-1 rounded-md text-white transition-colors"
+                            title="刪除圖片"
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                     <div className="flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-400 transition-colors">
@@ -516,6 +558,23 @@ export default function App() {
                           </span>
                         )}
                       </div>
+
+                      {record.images && record.images.length > 0 && (
+                        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                          {record.images.map((imgUrl, idx) => (
+                            <button
+                              key={idx}
+                              onClick={(e) => { e.stopPropagation(); downloadImage(imgUrl, `history-${record.id}-${idx}.jpg`); }}
+                              className="relative shrink-0 group/histimg"
+                            >
+                              <img src={imgUrl} className="h-8 w-8 object-cover rounded border border-slate-100" />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/histimg:opacity-100 flex items-center justify-center rounded">
+                                <Download size={8} className="text-white" />
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-6 flex items-center justify-center py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold gap-2 group-hover:bg-indigo-600 group-hover:text-white transition-all">
