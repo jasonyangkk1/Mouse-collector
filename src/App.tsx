@@ -230,14 +230,14 @@ export default function App() {
   }, [stocks]);
 
   return (
-    <div className="h-screen bg-[#f8fafc] text-[#1e293b] p-8 flex flex-col gap-6 overflow-hidden">
+    <div className="min-h-screen bg-[#f8fafc] text-[#1e293b] p-4 sm:p-8 flex flex-col gap-4 sm:gap-6">
       {/* Header */}
-      <header className="flex justify-between items-center pb-4 border-b border-slate-200 shrink-0 gap-8">
-        <div className="space-y-1 shrink-0">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            股票意見統合系統 <span className="text-slate-400 font-light text-xl ml-2">Stock Insights Aggregator</span>
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center pb-4 border-b border-slate-200 shrink-0 gap-4 lg:gap-8">
+        <div className="space-y-1 shrink-0 w-full lg:w-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex flex-col sm:flex-row sm:items-baseline gap-1">
+            股票意見統合系統 <span className="text-slate-400 font-light text-base sm:text-xl sm:ml-2">Stock Insights Aggregator</span>
           </h1>
-          <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
+          <p className="text-slate-500 font-medium text-xs sm:text-sm flex items-center gap-2">
             {activeTab === 'DASHBOARD' ? (
               <>上傳員工報告截圖，進行 AI 共識分析判斷</>
             ) : (
@@ -247,9 +247,9 @@ export default function App() {
         </div>
 
         {activeTab === 'DASHBOARD' && (
-          <div className="flex-grow max-w-2xl">
+          <div className="flex-grow w-full max-w-2xl order-3 lg:order-2">
             <div 
-              className="group relative flex items-center justify-between gap-4 px-6 py-3 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:border-indigo-400 hover:bg-white transition-all overflow-hidden"
+              className="group relative flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-3 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl hover:border-indigo-400 hover:bg-white transition-all overflow-hidden"
             >
               <input 
                 type="file" 
@@ -260,22 +260,22 @@ export default function App() {
                 onChange={handleFileUpload}
               />
               
-              <div className="flex items-center gap-4 flex-grow cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <div className="flex items-center gap-4 flex-grow cursor-pointer w-full sm:w-auto" onClick={() => fileInputRef.current?.click()}>
                 {uploadedImages.length === 0 ? (
                   <>
                     <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                       <Upload size={18} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-600">點擊或拖放員工報告截圖</p>
-                      <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">AI 將自動辨認內容</p>
+                      <p className="text-xs sm:text-sm font-bold text-slate-600">點擊上傳截圖</p>
+                      <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest font-bold">自動辨認內容</p>
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center gap-3 overflow-x-auto scrollbar-none py-1 max-w-[400px]">
+                  <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none py-1 max-w-full sm:max-w-[400px]">
                     {uploadedImages.map((img) => (
                       <div key={img.id} className="relative shrink-0 group/img">
-                        <img src={img.url} className="h-10 w-10 object-cover rounded-lg ring-2 ring-white shadow-sm" alt="Preview" />
+                        <img src={img.url} className="h-8 w-8 sm:h-10 sm:w-10 object-cover rounded-lg ring-2 ring-white shadow-sm" alt="Preview" />
                         <button 
                           onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
                           className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover/img:opacity-100 transition-opacity"
@@ -284,7 +284,7 @@ export default function App() {
                         </button>
                       </div>
                     ))}
-                    <div className="flex items-center justify-center h-10 w-10 shrink-0 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-400 transition-colors">
+                    <div className="flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-400 transition-colors">
                       <Upload size={14} />
                     </div>
                   </div>
@@ -295,7 +295,7 @@ export default function App() {
                 <button
                   onClick={runAnalysis}
                   disabled={isAnalyzing}
-                  className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
                 >
                   {isAnalyzing ? (
                     <>
@@ -305,7 +305,7 @@ export default function App() {
                   ) : (
                     <>
                       <Sparkles size={16} />
-                      開始 AI 分辨
+                      開始分辨
                     </>
                   )}
                 </button>
@@ -314,27 +314,27 @@ export default function App() {
           </div>
         )}
         
-        <div className="flex flex-col items-end gap-3 shrink-0">
-          <div className="flex bg-slate-100 p-1 rounded-xl">
+        <div className="flex flex-col items-end gap-3 shrink-0 w-full lg:w-auto order-2 lg:order-3">
+          <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
             <button 
               onClick={() => setActiveTab('DASHBOARD')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'DASHBOARD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'DASHBOARD' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               <LayoutDashboard size={14} /> 即時分析
             </button>
             <button 
               onClick={() => setActiveTab('HISTORY')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'HISTORY' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'HISTORY' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               <History size={14} /> 歷史紀錄
             </button>
           </div>
           
-          <div className="relative w-56">
+          <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             <input 
               type="text" 
-              placeholder="搜尋名稱或代碼..."
+              placeholder="搜尋標的..."
               className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-300"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -348,74 +348,77 @@ export default function App() {
         {activeTab === 'DASHBOARD' ? (
           <motion.main 
             key="dashboard"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            className="bg-white border border-slate-200 rounded-xl shadow-sm flex-grow flex flex-col overflow-hidden"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="bg-white border border-slate-200 rounded-xl shadow-sm flex-grow flex flex-col overflow-hidden min-h-0"
           >
-            {/* Table Header */}
-            <div className="bg-slate-50 border-b border-slate-200 grid grid-cols-12 px-6 py-4 font-bold text-[#64748b] uppercase text-[10px] tracking-widest shrink-0">
-              <div className="col-span-3">股票標的 / 代號</div>
-              <div className="col-span-2 text-center">員工 A (台股分析儀)</div>
-              <div className="col-span-2 text-center">員工 B (Momentum Core)</div>
-              <div className="col-span-2 text-center">員工 C (Zenith)</div>
-              <div className="col-span-3 text-right">統合判斷</div>
-            </div>
-
-            {/* Scrollable Body */}
-            <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
-              <AnimatePresence mode="popLayout">
-                {filteredStocks.map((stock) => (
-                  <motion.div
-                    key={stock.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="grid grid-cols-12 px-6 py-5 border-b border-slate-50 items-center hover:bg-slate-50 transition-colors group"
-                  >
-                    <div className="col-span-3">
-                      <div className="font-bold text-slate-900 flex items-baseline gap-2">
-                        {stock.name} <span className="font-mono text-slate-400 text-xs tracking-tight">{stock.id}.TW</span>
-                      </div>
-                      {stock.price && (
-                        <div className="text-[10px] text-slate-400 font-medium">建議區間: {stock.price}</div>
-                      )}
-                    </div>
-
-                    <div className="col-span-2 flex justify-center">
-                      <RatingIndicator rating={stock.appA} />
-                    </div>
-                    
-                    <div className="col-span-2 flex justify-center">
-                      <RatingIndicator rating={stock.appB} />
-                    </div>
-                    
-                    <div className="col-span-2 flex justify-center">
-                      <RatingIndicator rating={stock.appC} />
-                    </div>
-
-                    <div className="col-span-3 text-right">
-                      <ConsensusBadge stocks={stock} />
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              {filteredStocks.length === 0 && (
-                <div className="py-20 text-center">
-                  <p className="text-slate-400 text-sm italic">未找到符合搜尋條件的股票資訊</p>
+            {/* Scrollable Table Area */}
+            <div className="flex-grow overflow-x-auto overflow-y-auto scrollbar-thin">
+              <div className="min-w-[800px] lg:min-w-0">
+                {/* Table Header */}
+                <div className="bg-slate-50 border-b border-slate-200 grid grid-cols-12 px-4 sm:px-6 py-4 font-bold text-[#64748b] uppercase text-[10px] tracking-widest sticky top-0 z-10">
+                  <div className="col-span-3">股票標的 / 代號</div>
+                  <div className="col-span-2 text-center">員工 A (台股分析儀)</div>
+                  <div className="col-span-2 text-center">員工 B (Momentum Core)</div>
+                  <div className="col-span-2 text-center">員工 C (Zenith)</div>
+                  <div className="col-span-3 text-right">統合判斷</div>
                 </div>
-              )}
+
+                {/* Table Body */}
+                <AnimatePresence mode="popLayout">
+                  {filteredStocks.map((stock) => (
+                    <motion.div
+                      key={stock.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="grid grid-cols-12 px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-50 items-center hover:bg-slate-50 transition-colors group"
+                    >
+                      <div className="col-span-3">
+                        <div className="font-bold text-slate-900 text-sm sm:text-base flex items-baseline gap-2">
+                          {stock.name} <span className="font-mono text-slate-400 text-[10px] sm:text-xs tracking-tight">{stock.id}</span>
+                        </div>
+                        {stock.price && (
+                          <div className="text-[10px] text-slate-400 font-medium">建議區間: {stock.price}</div>
+                        )}
+                      </div>
+
+                      <div className="col-span-2 flex justify-center">
+                        <RatingIndicator rating={stock.appA} />
+                      </div>
+                      
+                      <div className="col-span-2 flex justify-center">
+                        <RatingIndicator rating={stock.appB} />
+                      </div>
+                      
+                      <div className="col-span-2 flex justify-center">
+                        <RatingIndicator rating={stock.appC} />
+                      </div>
+
+                      <div className="col-span-3 text-right">
+                        <ConsensusBadge stocks={stock} />
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {filteredStocks.length === 0 && (
+                  <div className="py-20 text-center">
+                    <p className="text-slate-400 text-sm italic">未找到符合搜尋條件的股票資訊</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* List Filter Rail */}
-            <div className="bg-slate-50 border-t border-slate-200 px-6 py-3 flex items-center justify-between gap-4 shrink-0">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">檢視過濾條件</div>
+            <div className="bg-slate-50 border-t border-slate-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">篩選標的</div>
               <div className="flex gap-2">
                 {(['ALL', 'CONSENSUS', 'DIVERGENT'] as const).map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`py-1.5 px-4 rounded-lg text-[10px] font-bold tracking-wider transition-all ${
+                    className={`py-1.5 px-3 sm:px-4 rounded-lg text-[9px] sm:text-[10px] font-bold tracking-wider transition-all ${
                       filter === f 
                         ? 'bg-indigo-600 text-white shadow-md' 
                         : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-100'
@@ -508,28 +511,27 @@ export default function App() {
       </AnimatePresence>
 
       {/* Footer Stats Grid */}
-      <footer className="grid grid-cols-3 gap-6 shrink-0 h-28">
-        <div className="bg-slate-50 border-dashed border-2 border-slate-200 rounded-xl p-5 flex flex-col justify-center">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">高度一致標的</div>
-          <div className="text-2xl font-bold text-slate-800">
+      <footer className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 shrink-0 mt-2">
+        <div className="bg-white border-2 border-slate-100 rounded-xl p-4 sm:p-5 flex flex-col justify-center">
+          <div className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">高度一致標的</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-800">
             {stats.consensus} <span className="text-xs font-normal text-slate-400">/ {stats.total} 檔</span>
           </div>
-          <div className="text-[10px] text-emerald-600 font-semibold mt-1">● 含共識買進及共識觀望</div>
+          <div className="text-[9px] text-emerald-600 font-semibold mt-1">● 含買進及觀望共識</div>
         </div>
 
-        <div className="bg-slate-50 border-dashed border-2 border-slate-200 rounded-xl p-5 flex flex-col justify-center">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">意見分歧標的</div>
-          <div className="text-2xl font-bold text-slate-800">
+        <div className="bg-white border-2 border-slate-100 rounded-xl p-4 sm:p-5 flex flex-col justify-center">
+          <div className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">意見分歧標的</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-800">
             {stats.divergent} <span className="text-xs font-normal text-slate-400">/ {stats.total} 檔</span>
           </div>
-          <div className="text-[10px] text-amber-600 font-semibold mt-1">● 決策不一致需額外判斷</div>
+          <div className="text-[9px] text-amber-600 font-semibold mt-1">● 需額外判斷</div>
         </div>
 
-        <div className="bg-indigo-600 text-white rounded-xl p-5 shadow-lg shadow-indigo-100 flex flex-col justify-center">
-          <div className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest mb-1">決策分析摘要</div>
-          <div className="text-xs leading-snug font-medium text-indigo-50">
-            目前有 {stats.total > 0 ? Math.round((stats.consensus/stats.total)*100) : 0}% 的標的處於共識區間，
-            其中 {stats.buyConsensusCount} 檔具備明確買進訊號。
+        <div className="bg-indigo-600 text-white rounded-xl p-4 sm:p-5 shadow-lg shadow-indigo-100 flex flex-col justify-center">
+          <div className="text-[9px] sm:text-[10px] font-bold text-indigo-200 uppercase tracking-widest mb-1">決策分析摘要</div>
+          <div className="text-[10px] sm:text-xs leading-snug font-medium text-indigo-50">
+            目前有 {stats.total > 0 ? Math.round((stats.consensus/stats.total)*100) : 0}% 的標的處於共識區間，其中 {stats.buyConsensusCount} 檔具備買進訊號。
           </div>
         </div>
       </footer>
