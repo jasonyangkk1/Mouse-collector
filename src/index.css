@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-inter: "Inter", -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+@layer components {
+  .stock-card {
+    @apply bg-white border border-slate-200 rounded-xl shadow-sm;
+  }
+}

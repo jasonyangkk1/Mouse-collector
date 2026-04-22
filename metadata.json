@@ -1,0 +1,6 @@
+{
+  "name": "台股意見統合分析 (Stock Consensus)",
+  "description": "統合三位專家/App對台股的分析意見，快速辨識共識買點與分歧標的。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
