@@ -16,6 +16,7 @@ interface AnalysisHistory {
   timestamp: number;
   stocks: StockOpinion[];
   imageCount: number;
+  images?: string[]; // Saved as base64 URLs
 }
 
 const RatingIndicator = ({ rating }: { rating: Rating }) => {
@@ -179,7 +180,8 @@ export default function App() {
           id: Math.random().toString(36).substr(2, 9),
           timestamp: Date.now(),
           stocks: result,
-          imageCount
+          imageCount,
+          images: uploadedImages.map(img => img.url)
         };
         
         setHistory(prev => {
@@ -199,6 +201,14 @@ export default function App() {
 
   const loadFromHistory = (record: AnalysisHistory) => {
     setStocks(record.stocks);
+    if (record.images) {
+      setUploadedImages(record.images.map(url => ({
+        id: Math.random().toString(36).substr(2, 9),
+        url,
+        mimeType: 'image/jpeg', // Assumption
+        base64: url.split(',')[1] || ''
+      })));
+    }
     setActiveTab('DASHBOARD');
   };
 
@@ -466,7 +476,16 @@ export default function App() {
                     
                     <div className="flex items-center gap-4 mb-4">
                       <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                        <ImageIcon size={20} />
+                        {record.images && record.images.length > 0 ? (
+                          <div className="relative">
+                            <img src={record.images[0]} className="w-8 h-8 object-cover rounded-md" alt="history preview" />
+                            {record.images.length > 1 && (
+                              <span className="absolute -bottom-1 -right-1 bg-indigo-600 text-[8px] text-white px-1 rounded-full">+{record.images.length - 1}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <ImageIcon size={20} />
+                        )}
                       </div>
                       <div>
                         <h3 className="font-bold text-slate-900">分析紀錄 #{record.id}</h3>
