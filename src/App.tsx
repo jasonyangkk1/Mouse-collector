@@ -43,17 +43,40 @@ const RatingIndicator = ({ rating }: { rating: Rating }) => {
 };
 
 const ConsensusBadge = ({ stocks }: { stocks: StockOpinion }) => {
-  const ratings = [stocks.appA, stocks.appB, stocks.appC];
+  const ratings = [stocks.appA, stocks.appB, stocks.appC, stocks.appD];
   const allBuy = ratings.every(r => r === 'BUY');
   const allAvoid = ratings.every(r => r !== 'BUY');
   
   if (allBuy) {
-    return <span className="px-3 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold uppercase tracking-wider">高度共識: 強烈買進</span>;
+    return (
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white rounded-full text-[10px] font-bold shadow-sm shadow-emerald-100" id="consensus-buy">
+        <Check size={12} strokeWidth={3} /> 強烈買進共識
+      </div>
+    );
   }
+  
   if (allAvoid) {
-    return <span className="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-full text-[10px] font-bold uppercase tracking-wider">高度共識: 避開警告</span>;
+    return (
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-400 text-white rounded-full text-[10px] font-bold shadow-sm" id="consensus-wait">
+        <Info size={12} strokeWidth={3} /> 觀望/避開共識
+      </div>
+    );
   }
-  return <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full text-[10px] font-bold uppercase tracking-wider">意見相左: 分歧觀察</span>;
+
+  const buyCount = ratings.filter(r => r === 'BUY').length;
+  if (buyCount >= 3) {
+    return (
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500 text-white rounded-full text-[10px] font-bold shadow-sm" id="consensus-lean-buy">
+        <TrendingUp size={12} strokeWidth={3} /> 傾向買進 ({buyCount}/4)
+      </div>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white rounded-full text-[10px] font-bold shadow-sm" id="consensus-divergent">
+      <AlertTriangle size={12} strokeWidth={3} /> 意見分歧
+    </div>
+  );
 };
 
 export default function App() {
@@ -175,10 +198,15 @@ export default function App() {
   - 右側背景是 鮮綠 -> **BUY** (O)
 - **員工 B (Momentum Core)**：看卡片整體的色塊顏色。
 - **員工 C (Zenith Intelligence)**：深藍綠(Teal)=**BUY** (O), 深棕色=**WAIT** (X)。
+- **員工 D (籌碼分析儀)**：
+  - 觀察深色卡片中的主要色塊顏色。
+  - 紅色/赤紅色文字或背景 -> **ALERT** (X)。
+  - 黃色/暗橘色文字或背景 -> **WAIT** (X)。
+  - 只有綠色文字或背景，或明確標註可買進 -> **BUY** (O)。
 
 【任務要求】
-- 從上到下掃描所有股票，確保 8074 鉅橡等不漏掉。
-- 提取 ID, Name, appA, appB, appC。
+- 從上到下掃描所有股票。
+- 提取 ID, Name, appA, appB, appC, appD。
 - 輸出格式為 JSON 陣列。`;
 
       const response = await ai.models.generateContent({
@@ -198,10 +226,11 @@ export default function App() {
                 appA: { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] },
                 appB: { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] },
                 appC: { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] },
+                appD: { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] },
                 price: { type: Type.STRING },
                 comment: { type: Type.STRING }
               },
-              required: ['id', 'name', 'appA', 'appB', 'appC']
+              required: ['id', 'name', 'appA', 'appB', 'appC', 'appD']
             }
           }
         }
@@ -258,7 +287,7 @@ export default function App() {
   const filteredStocks = useMemo(() => {
     return stocks.filter(stock => {
       const matchesSearch = stock.id.includes(searchTerm) || stock.name.includes(searchTerm);
-      const ratings = [stock.appA, stock.appB, stock.appC];
+      const ratings = [stock.appA, stock.appB, stock.appC, stock.appD];
       const isConsensus = ratings.every(r => r === 'BUY') || ratings.every(r => r !== 'BUY');
       
       if (filter === 'CONSENSUS') return matchesSearch && isConsensus;
@@ -270,10 +299,10 @@ export default function App() {
   const stats = useMemo(() => {
     const total = stocks.length;
     const consensus = stocks.filter(s => {
-      const r = [s.appA, s.appB, s.appC];
+      const r = [s.appA, s.appB, s.appC, s.appD];
       return r.every(v => v === 'BUY') || r.every(v => v !== 'BUY');
     }).length;
-    const buyConsensusCount = stocks.filter(s => [s.appA, s.appB, s.appC].every(r => r === 'BUY')).length;
+    const buyConsensusCount = stocks.filter(s => [s.appA, s.appB, s.appC, s.appD].every(r => r === 'BUY')).length;
     return { total, consensus, divergent: total - consensus, buyConsensusCount };
   }, [stocks]);
 
@@ -422,14 +451,15 @@ export default function App() {
           >
             {/* Scrollable Table Area */}
             <div className="flex-grow overflow-x-auto overflow-y-auto scrollbar-thin">
-              <div className="min-w-[800px] lg:min-w-0">
+              <div className="min-w-[1000px] lg:min-w-0">
                 {/* Table Header */}
-                <div className="bg-slate-50 border-b border-slate-200 grid grid-cols-12 px-4 sm:px-6 py-4 font-bold text-[#64748b] uppercase text-[10px] tracking-widest sticky top-0 z-10">
-                  <div className="col-span-3">股票標的 / 代號</div>
-                  <div className="col-span-2 text-center">員工 A (台股分析儀)</div>
-                  <div className="col-span-2 text-center">員工 B (Momentum Core)</div>
-                  <div className="col-span-2 text-center">員工 C (Zenith)</div>
-                  <div className="col-span-3 text-right">統合判斷</div>
+                <div className="bg-slate-50 border-b border-slate-200 grid grid-cols-[repeat(13,minmax(0,1fr))] px-0 py-0 font-bold text-[#64748b] uppercase text-[10px] tracking-widest sticky top-0 z-30">
+                  <div className="col-span-3 sticky left-0 bg-slate-50 z-40 px-4 sm:px-6 py-4 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] border-r border-slate-100">股票標的 / 代號</div>
+                  <div className="col-span-2 text-center py-4 px-1 border-r border-slate-100/50">員工 A (台股)</div>
+                  <div className="col-span-2 text-center py-4 px-1 border-r border-slate-100/50">員工 B (Momentum)</div>
+                  <div className="col-span-2 text-center py-4 px-1 border-r border-slate-100/50">員工 C (Zenith)</div>
+                  <div className="col-span-2 text-center py-4 px-1 border-r border-slate-100/50">員工 D (籌碼)</div>
+                  <div className="col-span-2 text-right py-4 px-4 sm:px-6">統合判斷</div>
                 </div>
 
                 {/* Table Body */}
@@ -439,9 +469,9 @@ export default function App() {
                       key={stock.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="grid grid-cols-12 px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-50 items-center hover:bg-slate-50 transition-colors group"
+                      className="grid grid-cols-[repeat(13,minmax(0,1fr))] border-b border-slate-50 items-center hover:bg-slate-50 transition-colors group"
                     >
-                      <div className="col-span-3">
+                      <div className="col-span-3 sticky left-0 bg-white group-hover:bg-slate-50 z-20 px-4 sm:px-6 py-4 sm:py-5 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] transition-colors border-r border-slate-50">
                         <div className="font-bold text-slate-900 text-sm sm:text-base flex items-baseline gap-2">
                           {stock.name} <span className="font-mono text-slate-400 text-[10px] sm:text-xs tracking-tight">{stock.id}</span>
                         </div>
@@ -450,19 +480,23 @@ export default function App() {
                         )}
                       </div>
 
-                      <div className="col-span-2 flex justify-center">
+                      <div className="col-span-2 flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50">
                         <RatingIndicator rating={stock.appA} />
                       </div>
                       
-                      <div className="col-span-2 flex justify-center">
+                      <div className="col-span-2 flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50">
                         <RatingIndicator rating={stock.appB} />
                       </div>
                       
-                      <div className="col-span-2 flex justify-center">
+                      <div className="col-span-2 flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50">
                         <RatingIndicator rating={stock.appC} />
                       </div>
 
-                      <div className="col-span-3 text-right">
+                      <div className="col-span-2 flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50">
+                        <RatingIndicator rating={stock.appD} />
+                      </div>
+
+                      <div className="col-span-2 text-right py-4 sm:py-5 px-4 sm:px-6">
                         <ConsensusBadge stocks={stock} />
                       </div>
                     </motion.div>
