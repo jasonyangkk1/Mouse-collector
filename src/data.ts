@@ -1,13 +1,13 @@
 
-export type Rating = 'BUY' | 'WAIT' | 'ALERT';
+export type Rating = 'BUY' | 'WAIT' | 'ALERT' | 'NONE';
 
 export interface StockOpinion {
   id: string;
   name: string;
-  appA: Rating; // 台股分析儀
-  appB: Rating; // MOMENTUM CORE
-  appC: Rating; // ZENITH INTELLIGENCE
-  appD: Rating; // 籌碼分析儀
+  appA?: Rating; // 台股分析儀
+  appB?: Rating; // MOMENTUM CORE
+  appC?: Rating; // ZENITH INTELLIGENCE
+  appD?: Rating; // 籌碼分析儀
   price?: string;
   comment?: string;
 }

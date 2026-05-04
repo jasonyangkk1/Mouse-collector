@@ -19,7 +19,14 @@ interface AnalysisHistory {
   images?: string[]; // Saved as base64 URLs
 }
 
-const RatingIndicator = ({ rating }: { rating: Rating }) => {
+const RatingIndicator = ({ rating }: { rating?: Rating }) => {
+  if (!rating || rating === 'NONE') {
+    return (
+      <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shadow-sm bg-slate-50 text-slate-300 border border-slate-100 italic" id="rating-none">
+        --
+      </div>
+    );
+  }
   switch (rating) {
     case 'BUY':
       return (
@@ -42,8 +49,11 @@ const RatingIndicator = ({ rating }: { rating: Rating }) => {
   }
 };
 
-const ConsensusBadge = ({ stocks }: { stocks: StockOpinion }) => {
-  const ratings = [stocks.appA, stocks.appB, stocks.appC, stocks.appD];
+const ConsensusBadge = ({ stocks, selectedIds }: { stocks: StockOpinion; selectedIds: string[] }) => {
+  const ratings = selectedIds.map(id => stocks[id as keyof StockOpinion] as Rating).filter(Boolean);
+  
+  if (ratings.length === 0) return null;
+  
   const allBuy = ratings.every(r => r === 'BUY');
   const allAvoid = ratings.every(r => r !== 'BUY');
   
@@ -64,10 +74,10 @@ const ConsensusBadge = ({ stocks }: { stocks: StockOpinion }) => {
   }
 
   const buyCount = ratings.filter(r => r === 'BUY').length;
-  if (buyCount >= 3) {
+  if (ratings.length >= 3 && buyCount >= 3) {
     return (
       <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500 text-white rounded-full text-[10px] font-bold shadow-sm" id="consensus-lean-buy">
-        <TrendingUp size={12} strokeWidth={3} /> 傾向買進 ({buyCount}/4)
+        <TrendingUp size={12} strokeWidth={3} /> 傾向買進 ({buyCount}/{ratings.length})
       </div>
     );
   }
@@ -87,7 +97,25 @@ export default function App() {
   const [stocks, setStocks] = useState<StockOpinion[]>(STOCKS_DATA);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [history, setHistory] = useState<AnalysisHistory[]>([]);
+  const [selectedAppIds, setSelectedAppIds] = useState<string[]>(['appA', 'appB', 'appC', 'appD']);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const EMPLOYEES = [
+    { id: 'appA', name: '員工 A', fullName: '員工 A (台股分析儀)' },
+    { id: 'appB', name: '員工 B', fullName: '員工 B (Momentum Core)' },
+    { id: 'appC', name: '員工 C', fullName: '員工 C (Zenith)' },
+    { id: 'appD', name: '員工 D', fullName: '員工 D (籌碼分析儀)' },
+  ];
+
+  const toggleAppSelection = (id: string) => {
+    setSelectedAppIds(prev => {
+      if (prev.includes(id)) {
+        if (prev.length === 1) return prev; // Keep at least one
+        return prev.filter(item => item !== id);
+      }
+      return [...prev, id];
+    });
+  };
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -180,6 +208,22 @@ export default function App() {
         }
       }));
 
+      const selectedEmployeeConfigs = EMPLOYEES.filter(e => selectedAppIds.includes(e.id));
+      
+      const employeeRules = selectedEmployeeConfigs.map(e => {
+        if (e.id === 'appA') return `- **員工 A (台股分析儀)**：最容易誤判。請無視左側描述文字，**只看右側「建議區間」或「價格」的背景顏色**。
+  - 右側背景是 黃/橙/琥珀 -> **WAIT** (X)
+  - 右側背景是 鮮綠 -> **BUY** (O)`;
+        if (e.id === 'appB') return `- **員工 B (Momentum Core)**：看卡片整體的色塊顏色。`;
+        if (e.id === 'appC') return `- **員工 C (Zenith Intelligence)**：深藍綠(Teal)=**BUY** (O), 深棕色=**WAIT** (X)。`;
+        if (e.id === 'appD') return `- **員工 D (籌碼分析儀)**：
+  - 觀察深色卡片中的主要色塊顏色。
+  - 紅色/赤紅色文字或背景 -> **ALERT** (X)。
+  - 黃色/暗橘色文字或背景 -> **WAIT** (X)。
+  - 只有綠色文字或背景，或明確標註可買進 -> **BUY** (O)。`;
+        return '';
+      }).join('\n');
+
       const prompt = `你是一個專業的股市分析專家助理。請徹底、完整地分析上傳的截圖，並【絕對嚴格】遵循以下評級轉換優先級，這是最優先指令：
 
 【視覺識別最高判準：色溫與飽和度】
@@ -193,21 +237,24 @@ export default function App() {
 3. **判定為 'BUY' (O) 的嚴格條件**：必須同時滿足「背景為綠色系」且「文字含有『買進』或『多頭』」。
 
 【個別工具細節 - 請針對性辨識】
-- **員工 A (台股分析儀)**：最容易誤判。請無視左側描述文字，**只看右側「建議區間」或「價格」的背景顏色**。
-  - 右側背景是 黃/橙/琥珀 -> **WAIT** (X)
-  - 右側背景是 鮮綠 -> **BUY** (O)
-- **員工 B (Momentum Core)**：看卡片整體的色塊顏色。
-- **員工 C (Zenith Intelligence)**：深藍綠(Teal)=**BUY** (O), 深棕色=**WAIT** (X)。
-- **員工 D (籌碼分析儀)**：
-  - 觀察深色卡片中的主要色塊顏色。
-  - 紅色/赤紅色文字或背景 -> **ALERT** (X)。
-  - 黃色/暗橘色文字或背景 -> **WAIT** (X)。
-  - 只有綠色文字或背景，或明確標註可買進 -> **BUY** (O)。
+${employeeRules}
 
 【任務要求】
 - 從上到下掃描所有股票。
-- 提取 ID, Name, appA, appB, appC, appD。
+- 只有針對以下員工進行提取: ${selectedEmployeeConfigs.map(e => e.fullName).join(', ')}
+- 提取 ID, Name, ${selectedAppIds.join(', ')}。
 - 輸出格式為 JSON 陣列。`;
+
+      const schemaProperties: any = {
+        id: { type: Type.STRING },
+        name: { type: Type.STRING },
+        price: { type: Type.STRING },
+        comment: { type: Type.STRING }
+      };
+      
+      selectedAppIds.forEach(id => {
+        schemaProperties[id] = { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] };
+      });
 
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -220,17 +267,8 @@ export default function App() {
             type: Type.ARRAY,
             items: {
               type: Type.OBJECT,
-              properties: {
-                id: { type: Type.STRING },
-                name: { type: Type.STRING },
-                appA: { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] },
-                appB: { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] },
-                appC: { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] },
-                appD: { type: Type.STRING, enum: ['BUY', 'WAIT', 'ALERT'] },
-                price: { type: Type.STRING },
-                comment: { type: Type.STRING }
-              },
-              required: ['id', 'name', 'appA', 'appB', 'appC', 'appD']
+              properties: schemaProperties,
+              required: ['id', 'name', ...selectedAppIds]
             }
           }
         }
@@ -286,25 +324,28 @@ export default function App() {
 
   const filteredStocks = useMemo(() => {
     return stocks.filter(stock => {
-      const matchesSearch = stock.id.includes(searchTerm) || stock.name.includes(searchTerm);
-      const ratings = [stock.appA, stock.appB, stock.appC, stock.appD];
+      const matchesSearch = (stock.id || '').includes(searchTerm) || (stock.name || '').includes(searchTerm);
+      const ratings = selectedAppIds.map(id => stock[id as keyof StockOpinion] as Rating).filter(Boolean);
       const isConsensus = ratings.every(r => r === 'BUY') || ratings.every(r => r !== 'BUY');
       
       if (filter === 'CONSENSUS') return matchesSearch && isConsensus;
       if (filter === 'DIVERGENT') return matchesSearch && !isConsensus;
       return matchesSearch;
     });
-  }, [searchTerm, filter, stocks]);
+  }, [searchTerm, filter, stocks, selectedAppIds]);
 
   const stats = useMemo(() => {
     const total = stocks.length;
     const consensus = stocks.filter(s => {
-      const r = [s.appA, s.appB, s.appC, s.appD];
+      const r = selectedAppIds.map(id => s[id as keyof StockOpinion] as Rating).filter(Boolean);
       return r.every(v => v === 'BUY') || r.every(v => v !== 'BUY');
     }).length;
-    const buyConsensusCount = stocks.filter(s => [s.appA, s.appB, s.appC, s.appD].every(r => r === 'BUY')).length;
+    const buyConsensusCount = stocks.filter(s => {
+      const r = selectedAppIds.map(id => s[id as keyof StockOpinion] as Rating).filter(Boolean);
+      return r.length > 0 && r.every(v => v === 'BUY');
+    }).length;
     return { total, consensus, divergent: total - consensus, buyConsensusCount };
-  }, [stocks]);
+  }, [stocks, selectedAppIds]);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#1e293b] p-4 sm:p-8 flex flex-col gap-4 sm:gap-6">
@@ -436,6 +477,23 @@ export default function App() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+
+          <div className="flex flex-wrap gap-2 justify-end">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest w-full text-right mb-1">參與分析員工</div>
+            {EMPLOYEES.map(emp => (
+              <button
+                key={emp.id}
+                onClick={() => toggleAppSelection(emp.id)}
+                className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border ${
+                  selectedAppIds.includes(emp.id)
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                    : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                }`}
+              >
+                {emp.name}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -451,15 +509,21 @@ export default function App() {
           >
             {/* Scrollable Table Area */}
             <div className="flex-grow overflow-x-auto overflow-y-auto scrollbar-thin">
-              <div className="min-w-[1000px] lg:min-w-0">
+              <div 
+                className="min-w-[1000px] lg:min-w-0 grid"
+                style={{ 
+                  gridTemplateColumns: `minmax(200px, 3fr) repeat(${selectedAppIds.length}, minmax(120px, 2fr)) minmax(150px, 2fr)` 
+                }}
+              >
                 {/* Table Header */}
-                <div className="bg-slate-50 border-b border-slate-200 grid grid-cols-[repeat(13,minmax(0,1fr))] px-0 py-0 font-bold text-[#64748b] uppercase text-[10px] tracking-widest sticky top-0 z-30">
-                  <div className="col-span-3 sticky left-0 bg-slate-50 z-40 px-4 sm:px-6 py-4 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] border-r border-slate-100">股票標的 / 代號</div>
-                  <div className="col-span-2 text-center py-4 px-1 border-r border-slate-100/50">員工 A (台股)</div>
-                  <div className="col-span-2 text-center py-4 px-1 border-r border-slate-100/50">員工 B (Momentum)</div>
-                  <div className="col-span-2 text-center py-4 px-1 border-r border-slate-100/50">員工 C (Zenith)</div>
-                  <div className="col-span-2 text-center py-4 px-1 border-r border-slate-100/50">員工 D (籌碼)</div>
-                  <div className="col-span-2 text-right py-4 px-4 sm:px-6">統合判斷</div>
+                <div 
+                  className="bg-slate-50 border-b border-slate-200 font-bold text-[#64748b] uppercase text-[10px] tracking-widest sticky top-0 z-30 contents"
+                >
+                  <div className="sticky left-0 bg-slate-50 z-40 px-4 sm:px-6 py-4 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] border-r border-slate-100">股票標的 / 代號</div>
+                  {EMPLOYEES.filter(e => selectedAppIds.includes(e.id)).map(emp => (
+                    <div key={emp.id} className="text-center py-4 px-1 border-r border-slate-100/50">{emp.name}</div>
+                  ))}
+                  <div className="text-right py-4 px-4 sm:px-6">統合判斷</div>
                 </div>
 
                 {/* Table Body */}
@@ -469,9 +533,9 @@ export default function App() {
                       key={stock.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="grid grid-cols-[repeat(13,minmax(0,1fr))] border-b border-slate-50 items-center hover:bg-slate-50 transition-colors group"
+                      className="contents group"
                     >
-                      <div className="col-span-3 sticky left-0 bg-white group-hover:bg-slate-50 z-20 px-4 sm:px-6 py-4 sm:py-5 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] transition-colors border-r border-slate-50">
+                      <div className="sticky left-0 bg-white group-hover:bg-slate-50 z-20 px-4 sm:px-6 py-4 sm:py-5 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] transition-colors border-r border-slate-50 border-b border-slate-50">
                         <div className="font-bold text-slate-900 text-sm sm:text-base flex items-baseline gap-2">
                           {stock.name} <span className="font-mono text-slate-400 text-[10px] sm:text-xs tracking-tight">{stock.id}</span>
                         </div>
@@ -480,31 +544,21 @@ export default function App() {
                         )}
                       </div>
 
-                      <div className="col-span-2 flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50">
-                        <RatingIndicator rating={stock.appA} />
-                      </div>
-                      
-                      <div className="col-span-2 flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50">
-                        <RatingIndicator rating={stock.appB} />
-                      </div>
-                      
-                      <div className="col-span-2 flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50">
-                        <RatingIndicator rating={stock.appC} />
-                      </div>
+                      {EMPLOYEES.filter(e => selectedAppIds.includes(e.id)).map(emp => (
+                        <div key={emp.id} className="flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50 border-b border-slate-50 transition-colors group-hover:bg-slate-50/50">
+                          <RatingIndicator rating={stock[emp.id as keyof StockOpinion] as Rating} />
+                        </div>
+                      ))}
 
-                      <div className="col-span-2 flex justify-center py-4 sm:py-5 px-1 border-r border-slate-50/50">
-                        <RatingIndicator rating={stock.appD} />
-                      </div>
-
-                      <div className="col-span-2 text-right py-4 sm:py-5 px-4 sm:px-6">
-                        <ConsensusBadge stocks={stock} />
+                      <div className="text-right py-4 sm:py-5 px-4 sm:px-6 border-b border-slate-50 transition-colors group-hover:bg-slate-50/50">
+                        <ConsensusBadge stocks={stock} selectedIds={selectedAppIds} />
                       </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
 
                 {filteredStocks.length === 0 && (
-                  <div className="py-20 text-center">
+                  <div className="col-span-full py-20 text-center border-b border-slate-50">
                     <p className="text-slate-400 text-sm italic">未找到符合搜尋條件的股票資訊</p>
                   </div>
                 )}
